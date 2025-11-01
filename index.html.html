@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tubes Cursor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bmc-size:200px;
+      --bmc-accent:#ff0077;
+      --bmc-bg:#000000;
+      --fsize:12px;
+    }
+
+    html, body {
+      margin:0;
+      width:100%;
+      min-height:100vh;
+      height:100%;
+      background:black;
+      touch-action:none;
+      overflow-x:hidden;
+    }
+    #app { height:100%; font-family: "Montserrat", serif; position:relative; }
+
+    #canvas {
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100vh !important;
+      z-index:1;
+      pointer-events:auto;
+    }
+
+    /* Hero + card */
+    .hero {
+      position:relative;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      z-index:10;
+      pointer-events:auto;
+      text-align:center;
+    }
+
+    .card{
+      width:400px;
+      height:240px;
+      background:linear-gradient(135deg,#0c3b78,#001a2d);
+      border-radius:18px;
+      color:white;
+      padding:30px 40px;
+      position:relative;
+      box-shadow:0 10px 25px rgba(0,0,0,0.3);
+      overflow:hidden;
+      z-index:10;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:url('https://www.transparenttextures.com/patterns/polished-metal.png');
+      opacity:0.1;
+      pointer-events:none;
+    }
+
+    .visa-logo{ position:absolute; top:20px; right:35px; font-size:28px; font-weight:bold; letter-spacing:2px; }
+    .chip{ width:50px; height:35px; background:linear-gradient(135deg,#dcdcdc,#a0a0a0); border-radius:6px; position:absolute; top:25px; left:35px; }
+    .card-number{ margin-top:10px; font-size:20px; letter-spacing:4px; }
+    .card-number1{margin-top:32px; font-size:20px; letter-spacing:4px; text-align:center;}
+    .card-footer{ position:absolute; bottom:30px; left:40px; right:40px; display:flex; justify-content:space-between; font-size:14px; }
+    .label{ opacity:1; font-size:12px; }
+
+    /* BMC circular button */
+    #stage{ position:relative; width:100%; height:100%; display:grid; place-items:end; z-index:10; }
+    .bmc-circle{ position:relative; width:var(--bmc-size); height:var(--bmc-size); display:grid; place-items:center; text-decoration:none; isolation:isolate; transition:all .4s ease; }
+    .bmc-ring{ position:absolute; inset:0; animation:spin 12s linear infinite; }
+    .bmc-text{ font-family:'Bebas Neue', sans-serif; font-size:var(--fsize); letter-spacing:1px; text-transform:uppercase; fill:var(--bmc-accent); }
+    .bmc-center{ width:55%; height:55%; border-radius:50%; background:radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.1), rgba(0,0,0,0)), linear-gradient(180deg, var(--bmc-bg), rgba(0,0,0,.85)); box-shadow:0 0 0 2px var(--bmc-accent) inset, 0 0 12px var(--bmc-accent); display:grid; place-items:center; transition:transform .5s ease, box-shadow .5s ease; }
+    .bmc-cup{ width:60%; height:60%; display:block; filter:drop-shadow(4px 4px 0 rgba(0,0,0,.7)); }
+    .bmc-circle:hover .bmc-center{ transform:scale(1.1); box-shadow:0 0 0 2px var(--bmc-accent) inset, 0 0 22px var(--bmc-accent); }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Footer copy UI */
+    .footer-copy {
+      position:fixed;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      z-index:11;
+      pointer-events:auto;
+      flex-wrap:wrap;
+      justify-content:center;
+      text-align:center;
+    }
+    .footer-copy textarea {
+      width:320px;
+      height:96px;
+      padding:10px;
+      font-size:16px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      resize:none;
+      background:white;
+      color:black;
+      outline:none;
+    }
+    .btn {
+      background-color:white;
+      color:black;
+      padding:12px 28px;
+      border-radius:8px;
+      font-weight:bold;
+      border:none;
+      cursor:pointer;
+      transition:background .2s, color .2s;
+    }
+    .btn:hover { background-color:var(--bmc-accent); color:white; }
+    .copied { color: #7ad87a; font-weight:700; display:none; }
+
+    /* ensure clickable elements appear above canvas */
+    a, button, textarea { z-index:12; }
+
+    /* Responsive section */
+    @media(max-width:1024px){
+      .card{ width:320px; height:210px; padding:25px 35px; }
+    }
+
+    @media(max-width:768px){
+      .card{ width:260px; height:190px; padding:20px 25px; }
+      .visa-logo{ font-size:18px; top:20px; right:25px; }
+      .chip{ width:40px; height:25px; top:20px; left:25px; }
+      .card-number, .card-number1{ font-size:16px; letter-spacing:2px; }
+      .card-number1{ margin-top:24px; }
+      .card-footer{ bottom:25px; left:25px; right:25px; font-size:12px; }
+
+      .footer-copy { flex-direction:column; gap:10px; bottom:10px; }
+      .footer-copy textarea { width:250px; height:80px; font-size:14px; }
+      .btn { padding:10px 22px; font-size:14px; }
+
+      :root{ --bmc-size:160px; }
+    }
+
+    @media(max-width:480px){
+      .card{ width:220px; height:180px; padding:18px 22px; }
+      .visa-logo{ font-size:16px; right:20px; top:18px; }
+      .chip{ width:35px; height:22px; top:18px; left:20px; }
+      .card-number, .card-number1{ font-size:14px; letter-spacing:1px; }
+      .card-footer{ bottom:22px; left:22px; right:22px; font-size:11px; }
+
+      .footer-copy textarea { width:200px; height:70px; font-size:13px; }
+      .btn { padding:8px 20px; font-size:13px; }
+      :root{ --bmc-size:130px; --fsize:10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="canvas"></canvas>
+
+    <div class="hero">
+      <div class="card">
+        <div class="chip"></div>
+        <div class="visa-logo">SADA PAY</div>
+        <div class="card-number1">Buy for me a Coffee</div>
+        <div class="card-number">5590 4902 6082 0921</div>
+        <div class="card-footer">
+          <div>
+            <div class="label">Card Holder</div>
+            <div>Rafay Ur Rehman</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="stage">
+        <a class="bmc-circle" href="https://wa.link/bs9huv" target="_blank" rel="noopener noreferrer">
+          <svg class="bmc-ring" viewBox="0 0 100 100">
+            <defs>
+              <path id="bmc-textpath" d="M50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0" />
+            </defs>
+            <text class="bmc-text">
+              <textPath href="#bmc-textpath">• Shopify Expert • Hire me • Grow your store • • </textPath>
+            </text>
+          </svg>
+          <div class="bmc-center">
+            <svg class="bmc-cup" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 30">
+              <path fill="#fd0" d="M10.1 13.12a8 8 0 0 1-3.54.94q-.9 0-1.79-.26l1 10.66q.07.69.55 1.17.5.46 1.16.47s1.42.07 1.89.07c.5 0 2.03-.07 2.03-.07.43 0 .85-.17 1.16-.47.32-.3.51-.72.55-1.17l1.07-11.78a4 4 0 0 0-1.5-.28c-.95 0-1.7.33-2.58.72" />
+              <path fill="#fff" d="m18.8 7.6-.16-.8c-.13-.7-.44-1.37-1.14-1.62-.22-.09-.47-.12-.64-.3s-.23-.42-.27-.67l-.21-1.34c-.07-.38-.12-.82-.3-1.17-.21-.47-.67-.75-1.12-.93q-.36-.14-.72-.23a17 17 0 0 0-3.5-.5q-2.1-.11-4.21.08c-1.05.1-2.14.22-3.14.6-.36.13-.73.3-1 .59-.34.35-.45.9-.2 1.35.17.32.46.54.78.69q.62.29 1.28.43a27 27 0 0 0 8.92.16c.4-.06.66-.6.54-.99-.14-.45-.52-.63-.95-.56l-.2.03h-.04a25 25 0 0 1-6.68.02l-.13-.01h-.03l-.13-.03q-.41-.06-.83-.15l-.07-.05a.13.13 0 0 1 0-.16L4.72 2l.96-.18q.23-.01.45-.05a28 28 0 0 1 6.2.03l.16.02.1.01q.45.07.9.17c.46.1 1.03.14 1.23.65q.08.25.12.5l.05.22v.01l.32 1.65a.3.3 0 0 1-.13.18l-.1.04h-.07l-.06.02a34 34 0 0 1-1.8.2 40 40 0 0 1-8.95-.21l-.15-.02-.33-.05-1.1-.2a2 2 0 0 0-1.28.2q-.5.29-.77.83c-.18.37-.23.78-.3 1.18-.08.4-.2.84-.16 1.25.1.9.7 1.62 1.56 1.78q1.22.23 2.45.38a44 44 0 0 0 10.47.07.5.5 0 0 1 .45.16.6.6 0 0 1 .16.46l-.09.83-.49 5-.66 6.73c-.05.49-.06.99-.15 1.47a1.7 1.7 0 0 1-1.34 1.38q-1 .24-2 .25l-2.24-.03c-.8 0-1.77-.07-2.39-.69-.54-.54-.61-1.39-.69-2.12l-.29-2.91-.54-5.4-.35-3.49-.01-.17c-.05-.42-.33-.82-.78-.8-.38.01-.81.35-.77.8l.26 2.59.54 5.35.45 4.56.1.88c.16 1.6 1.33 2.45 2.78 2.69.84.14 1.7.17 2.57.19 1.1.01 2.2.06 3.29-.15 1.6-.3 2.8-1.42 2.98-3.15l.15-1.5.48-4.94.54-5.4.24-2.46a.6.6 0 0 1 .14-.33q.13-.15.3-.18c.46-.1.9-.25 1.23-.61.52-.58.62-1.33.44-2.1" />
+            </svg>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-copy">
+    <textarea id="myText">{%when 'delivery_widget' %}
+               <div class="delivery-widget"> 
+  <div class="delivery-widget__content">
+    <!-- SVG from settings -->
+    <div class="delivery-widget__icon">
+      {{ block.settings.flag_svg }}
+    </div>
+    <span class="line-1">|</span>
+    <span class="delivery-widget__text">
+      {{ block.settings.delivery_text }}
+    </span>
+  </div>
+
+  <div class="delivery-widget__info">
+   
+    <span class="delivery-widget__stock"> {{block.settings.stock-icon}}{{ block.settings.stock_text }}</span>
+  <span class="middle"> {{ block.settings.delivery-icon }}
+       {{block.settings.delivery_text1}}
+  </span>
+    <span class="delivery-widget__delivery" id="estimated-delivery">
+    </span>
+  </div>
+</div>
+
+
+<style>
+ .line-1 {
+  font-size: 18px;
+}
+.delivery-widget {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.delivery-widget__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.delivery-widget__icon {
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.delivery-widget__text {
+  color: #111;
+}
+.delivery-widget__info {
+  display: flex;
+  justify-content: center;
+  font-size: 13px;
+}
+.delivery-widget__stock {
+  color: #d9534f; /* red */
+  display:flex;
+  gap:5px;
+  opacity:0.8;
+}
+.delivery-widget__delivery {
+  color: #28a745; /* green */
+  font-weight:bold;
+}
+.middle{
+   color: #28a745;
+   display:flex;
+   gap:5px;
+   justify-content:center;
+   
+}
+</style>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Set estimated delivery: today + 3 to 6 days
+    const startOffset = 3; // delivery start in days
+    const endOffset = 6;   // delivery end in days
+
+    const today = new Date();
+    const options = { month: 'short', day: 'numeric' };
+
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() + startOffset);
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + endOffset);
+
+    const deliveryText = `: ${startDate.toLocaleDateString(undefined, options)} - ${endDate.toLocaleDateString(undefined, options)}`;
+    document.getElementById("estimated-delivery").textContent = deliveryText;
+  });
+</script>
+</textarea>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+      <button id="copyBtn" class="btn" type="button">Copy Text</button>
+      <div class="copied" id="copiedMsg">Copied!</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js";
+    const canvas = document.getElementById('canvas');
+    let app = null;
+    try {
+      app = TubesCursor(canvas, {
+        tubes: {
+          colors: ["#f967fb", "#53bc28", "#6958d5"],
+          lights: { intensity: 200, colors: ["#83f36e", "#fe8a2e", "#ff008a", "#60aed5"] }
+        }
+      });
+    } catch (err) { console.warn('TubesCursor init failed:', err); }
+
+    async function copyText() {
+      const textarea = document.getElementById('myText');
+      const msg = document.getElementById('copiedMsg');
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(textarea.value);
+        else { textarea.select(); document.execCommand('copy'); window.getSelection()?.removeAllRanges(); }
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 1500);
+      } catch (err) { console.error('Copy failed', err); }
+    }
+    document.getElementById('copyBtn').addEventListener('click', copyText);
+    document.addEventListener('click', () => {
+      if (!app?.tubes) return;
+      const random = n => Array.from({length:n},()=> '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0'));
+      app.tubes.setColors(random(3));
+      app.tubes.setLightsColors(random(4));
+    });
+  </script>
+</body>
+</html>
